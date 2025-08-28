@@ -2,20 +2,36 @@ import google.generativeai as genai
 import json
 import random
 import time
+import os
 from typing import List, Dict, Optional
 from dataclasses import dataclass
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ Environment variables loaded from .env file")
+except ImportError:
+    print("⚠️  python-dotenv not installed. Install with: pip install python-dotenv")
+    print("🔧 Using environment variables from system or default values")
 
 # Configuration
 @dataclass
 class Config:
     """Configuration settings for the AI course recommender"""
-    max_retries: int = 3
-    retry_delay: float = 2.0
-    cache_size: int = 50
-    request_timeout: int = 30
+    max_retries: int = None
+    retry_delay: float = None
+    cache_size: int = None
+    request_timeout: int = None
     max_courses_per_level: Dict[str, int] = None
 
     def __post_init__(self):
+        # Load from environment variables with fallbacks
+        self.max_retries = int(os.getenv('MAX_RETRIES', 3))
+        self.retry_delay = float(os.getenv('RETRY_DELAY', 2.0))
+        self.cache_size = int(os.getenv('CACHE_SIZE', 50))
+        self.request_timeout = int(os.getenv('REQUEST_TIMEOUT', 30))
+
         if self.max_courses_per_level is None:
             self.max_courses_per_level = {
                 'beginner': 3,
@@ -26,11 +42,40 @@ class Config:
 # Global configuration
 config = Config()
 
+# Load API Keys from environment variables
+def load_api_keys() -> List[str]:
+    """Load API keys from environment variables"""
+    api_keys = []
+
+    # Primary API Key
+    key1 = os.getenv('GEMINI_API_KEY_1')
+    if key1:
+        api_keys.append(key1)
+        print("✅ Primary API key loaded")
+    else:
+        print("⚠️  Primary API key (GEMINI_API_KEY_1) not found in environment")
+
+    # Secondary API Key
+    key2 = os.getenv('GEMINI_API_KEY_2')
+    if key2:
+        api_keys.append(key2)
+        print("✅ Secondary API key loaded")
+    else:
+        print("⚠️  Secondary API key (GEMINI_API_KEY_2) not found in environment")
+
+    if not api_keys:
+        raise ValueError(
+            "❌ No API keys found! Please set GEMINI_API_KEY_1 and/or GEMINI_API_KEY_2 in your .env file\n"
+            "Example .env file:\n"
+            "GEMINI_API_KEY_1=your_api_key_here\n"
+            "GEMINI_API_KEY_2=your_backup_api_key_here"
+        )
+
+    print(f"🔑 Loaded {len(api_keys)} API key(s) for Gemini AI")
+    return api_keys
+
 # API Keys for redundancy and load balancing
-API_KEYS = [
-    "AIzaSyB_P-MQBagaMSVt1snTZRjT8-eJePQO_ys",  # Original key
-    "AIzaSyBMT8vmSHo4Lhp_hvFp14r-wynhlWrzHQY"   # New key
-]
+API_KEYS = load_api_keys()
 
 class GeminiAPIClient:
     """Efficient Gemini API client with key rotation and error handling"""
