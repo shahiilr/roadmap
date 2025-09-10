@@ -24,11 +24,13 @@ pip install -r requirements.txt
 ```
 
 3. Set up API keys (optional - see Usage section):
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (copy from `.env.example`):
 ```
-GEMINI_API_KEY_1=your_first_api_key_here
-GEMINI_API_KEY_2=your_second_api_key_here
+cp .env.example .env
+# Then edit .env and add your actual API keys
 ```
+
+Get your API keys from: https://makersuite.google.com/app/apikey
 
 ## Usage
 
